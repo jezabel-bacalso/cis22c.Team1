@@ -1,0 +1,19 @@
+John Smith
+johnsmith@email.com
+password123
+
+Sarah Johnson
+sarahjohnson@email.com
+customer2
+
+Michael Brown
+michaelbrown@email.com
+123abc
+
+Emily Davis
+emilydavis@email.com
+pass999
+
+David Wilson
+davidwilson@email.com
+000xyz
