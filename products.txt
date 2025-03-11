@@ -73,14 +73,8 @@ Cake
 Egg, Milk, Soy, Gluten, Cinnamon
 330
 
-
 Strawberry Cream Cake
 Cake
 39.00
 Egg, Milk, Soy, Gluten
 3300
-
-
-Strawberry Panna Cotta
-Milk
-130
