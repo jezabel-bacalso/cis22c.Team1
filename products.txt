@@ -1,0 +1,86 @@
+product/type/price/description/allergens/calories
+
+Cinnamon Roll
+Pastry
+Egg, Milk, Soy, Gluten, Cinnamon
+1190
+
+Brioche
+Pastry
+3.20
+Egg, Milk, Soy, Gluten
+810
+
+Custard Bun
+Pastry
+Egg, Milk, Soy, Gluten
+280
+
+Cocoa Dipped Danish
+Pastry
+Egg, Milk, Gluten
+440
+
+Chocolate Croissant
+Pastry
+Egg, Milk, Soy, Gluten, Almonds
+330
+
+Cream Puff
+Pastry
+Egg, Milk, Soy, Gluten, Tree Nuts
+410
+
+Egg Tart
+Pastry
+4.90
+Egg, Milk, Gluten
+210
+
+Orange Muffin
+Pastry
+3.30
+Egg, Milk, Soy, Gluten, Almonds
+600
+
+ChocoChip Cookie
+Cookie
+1.50
+Egg, Milk, Soy, Gluten, Cinnamon
+370
+
+Brownie Cookie
+Cookie
+1.50
+Egg, Milk, Soy, Gluten, Walnuts
+390
+
+Tiramisu Slice
+Cake
+4.35
+Egg, Milk, Soy, Gluten, Almonds
+370
+
+Red Velvet Slice
+Cake
+4.45
+Egg, Milk, Soy, Gluten
+400
+
+Black Forest Slice
+Cake
+4.45
+Egg, Milk, Soy, Gluten, Cinnamon
+330
+
+
+Strawberry Cream Cake
+Cake
+39.00
+Egg, Milk, Soy, Gluten
+3300
+
+
+Strawberry Panna Cotta
+Milk
+130
