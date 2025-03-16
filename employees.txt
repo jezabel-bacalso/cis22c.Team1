@@ -1,11 +1,14 @@
 William Thomas
 williamthomas@email.com
 manager1
+Manager
 
 Olivia Martinez
 oliviamartinez@email.com
 hello1
+Employee
 
 Daniel Harris
 danielharris@email.com
 secure321
+Employee
