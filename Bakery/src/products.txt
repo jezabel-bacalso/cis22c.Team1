@@ -1,0 +1,99 @@
+product/type/price/description/allergens/calories
+
+Choco Bun
+Pastry
+2.55
+A petite bun made of chocolate dough filled with chocolate chips.
+Egg, Milk, Soy, Gluten, Almonds
+230
+
+Brioche
+Pastry
+3.20
+Soft, moist, and rich with a buttery and milky flavor.
+Egg, Milk, Soy, Gluten
+810
+
+Custard Bun
+Pastry
+2.50
+Soft brioche filled with sweet and rich cream on top of a layer of vanilla custard.
+Egg, Milk, Soy, Gluten
+280
+
+Cocoa Dipped Danish
+Pastry
+2.20
+A flaky, buttery puff pastry dipped in milk chocolate.
+Egg, Milk, Gluten
+440
+
+Chocolate Croissant
+Pastry
+2.20
+A flaky, buttery croissant filled with chocolate. Topped with almonds and a dusting of powdered sugar.
+Egg, Milk, Soy, Gluten, Almonds
+330
+
+Cream Puff
+Pastry
+4.50
+Classic cream puff shell filled with a fresh sweet cream filling.
+Egg, Milk, Soy, Gluten, Tree Nuts
+410
+
+Egg Tart
+Pastry
+4.90
+Creamy egg custard filling baked in a buttery, flaky crust.
+Egg, Milk, Gluten
+210
+
+Orange Muffin
+Pastry
+3.30
+A delicate and fluffy golden orange muffin filled with bits of candied fruit.
+Egg, Milk, Soy, Gluten, Almonds
+600
+
+ChocoChip Cookie
+Cookie
+1.50
+Classic chewy cookie packed with chocolate chips and oats.
+Egg, Milk, Soy, Gluten, Cinnamon
+370
+
+Brownie Cookie
+Cookie
+1.50
+Soft and chewy fudge chocolate cookie with walnuts.
+Egg, Milk, Soy, Gluten, Walnuts
+390
+
+Tiramisu Slice
+Cake
+4.35
+A traditional Italian dessert layered with mascarpone cheese and coffee flavored lady fingers.
+Egg, Milk, Soy, Gluten, Almonds
+370
+
+Red Velvet Slice
+Cake
+4.45
+Red velvet cake layered with vanilla cream cheese and covered with red velvet cake crumbs.
+Egg, Milk, Soy, Gluten
+400
+
+Black Forest Slice
+Cake
+4.45
+Chocolate sponge cake layers filled with sweet cherries and fresh cream.
+Egg, Milk, Soy, Gluten, Cinnamon
+330
+
+Strawberry Cream Cake
+Cake
+39.00
+8" strawberry chiffon cake layers filled with strawberry mousse and vanilla creme brulee.
+Egg, Milk, Soy, Gluten
+3300
