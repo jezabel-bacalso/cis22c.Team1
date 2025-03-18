@@ -1,5 +1,6 @@
 import java.util.Scanner;
 import java.util.List;
+import java.util.PriorityQueue;
 
 public class CustomerMenu {
     private LinkedList orderList;
@@ -20,6 +21,12 @@ public class CustomerMenu {
             System.out.println("5. Exit");
             System.out.print("Choose an option: ");
             
+            if (!scanner.hasNextInt()) {
+                System.out.println("Invalid input. Please enter a number.");
+                scanner.next(); // Consume invalid input
+                continue;
+            }
+
             int choice = scanner.nextInt();
             scanner.nextLine(); // Consume newline
             
@@ -54,4 +61,3 @@ public class CustomerMenu {
         }
     }
 }
-
