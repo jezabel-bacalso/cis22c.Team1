@@ -54,11 +54,11 @@ public class Product implements Comparable<Product> {
                 int calories = parseInt(readNextLine(br));
                 
                 products.add(new Product(
-                    name, category, price, 15, // Default stock to 15
+                    name, category, price, 15,
                     description, allergens, calories
                 ));
                 
-                br.readLine(); // Skip empty line
+                br.readLine(); 
             }
         }
         return products;
@@ -78,7 +78,6 @@ public class Product implements Comparable<Product> {
         return null;
     }
 
-    // CSV-safe string handling
     private static String sanitize(String input) {
         return input.replace(",", "<comma>")
                     .replace("\n", "<newline>");
@@ -92,7 +91,7 @@ public class Product implements Comparable<Product> {
             description,
             String.join(", ", allergens),
             String.valueOf(calories),
-            "" // Empty line separator
+            "" 
         );
     }
 
