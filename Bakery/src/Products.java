@@ -1,139 +1,136 @@
-import java.io.*;
-import java.util.*;
-import java.util.stream.Collectors;
+
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Product implements Comparable<Product> {
-    private final String productName;
+    private static int nextId = 1000;
+    
+    private final String id;
+    private final String name;
     private final String category;
     private double price;
     private int stock;
     private final String description;
     private final Set<String> allergens;
     private final int calories;
+    private final LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    public Product(String productName, String category, double price, int stock,
-                   String description, String allergensCSV, int calories) {
-        validateInputs(productName, price, stock, calories);
+    public Product(
+        String name,
+        String category,
+        double price,
+        int stock,
+        String description,
+        Set<String> allergens,
+        int calories
+    ) {
+        validateInputs(name, category, price, stock, calories);
         
-        this.productName = sanitize(productName.trim());
+        synchronized(Product.class) {
+            this.id = String.format("P%d", nextId++);
+        }
+        this.name = sanitize(name.trim());
         this.category = sanitize(category.trim());
         this.price = price;
         this.stock = stock;
         this.description = sanitize(description.trim());
-        this.allergens = parseAllergens(allergensCSV);
+        this.allergens = new HashSet<>();
+        for (String allergen : allergens) {
+            this.allergens.add(allergen.toLowerCase().trim());
+        }
         this.calories = calories;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    private void validateInputs(String productName, double price, int stock, int calories) {
-        if (productName == null || productName.trim().isEmpty()) {
+    private void validateInputs(
+        String name,
+        String category,
+        double price,
+        int stock,
+        int calories
+    ) {
+        if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Product name cannot be empty");
         }
-        if (price < 0.01) throw new IllegalArgumentException("Invalid price: " + price);
-        if (stock < 0) throw new IllegalArgumentException("Invalid stock: " + stock);
-        if (calories < 1) throw new IllegalArgumentException("Invalid calories: " + calories);
-    }
-
-    private Set<String> parseAllergens(String allergensCSV) {
-        return Arrays.stream(allergensCSV.split(","))
-            .map(String::trim)
-            .filter(a -> !a.isEmpty())
-            .collect(Collectors.toCollection(() -> 
-                new TreeSet<>(String.CASE_INSENSITIVE_ORDER)));
-    }
-
-    public static List<Product> loadFromFile(String filename) throws IOException {
-        List<Product> products = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-            String line;
-            while ((line = skipEmptyLines(br)) != null) {
-                String name = line.trim();
-                String category = readNextLine(br);
-                double price = parseDouble(readNextLine(br));
-                String description = readNextLine(br);
-                String allergens = readNextLine(br);
-                int calories = parseInt(readNextLine(br));
-                
-                products.add(new Product(
-                    name, category, price, 15,
-                    description, allergens, calories
-                ));
-                
-                br.readLine(); 
-            }
+        if (category == null || category.trim().isEmpty()) {
+            throw new IllegalArgumentException("Category cannot be empty");
         }
-        return products;
-    }
-
-    private static String readNextLine(BufferedReader br) throws IOException {
-        String line = br.readLine();
-        if (line == null) throw new IOException("Unexpected end of file");
-        return line.trim();
-    }
-
-    private static String skipEmptyLines(BufferedReader br) throws IOException {
-        String line;
-        while ((line = br.readLine()) != null) {
-            if (!line.trim().isEmpty()) return line;
+        if (price < 0.01) {
+            throw new IllegalArgumentException("Invalid price: " + price);
         }
-        return null;
+        if (stock < 0) {
+            throw new IllegalArgumentException("Invalid stock: " + stock);
+        }
+        if (calories < 1) {
+            throw new IllegalArgumentException("Invalid calories: " + calories);
+        }
     }
 
-    private static String sanitize(String input) {
-        return input.replace(",", "<comma>")
-                    .replace("\n", "<newline>");
+    private String sanitize(String input) {
+        return input.replaceAll("[,\\n\\r]", " ").trim();
     }
 
-    public String toFileString() {
-        return String.join("\n",
-            productName,
-            category,
-            String.format("%.2f", price),
-            description,
-            String.join(", ", allergens),
-            String.valueOf(calories),
-            "" 
-        );
-    }
-
-    // Getters and setters
-    public String getProductName() { return productName.replace("<comma>", ",").replace("<newline>", "\n"); }
-    public String getCategory() { return category.replace("<comma>", ",").replace("<newline>", "\n"); }
+    // Getters
+    public String getId() { return id; }
+    public String getName() { return name; }
+    public String getCategory() { return category; }
     public double getPrice() { return price; }
     public int getStock() { return stock; }
-    public String getDescription() { return description.replace("<comma>", ",").replace("<newline>", "\n"); }
-    public Set<String> getAllergens() { return new TreeSet<>(allergens); }
+    public String getDescription() { return description; }
+    public Set<String> getAllergens() { return new HashSet<>(allergens); }
     public int getCalories() { return calories; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 
+    // Setters with validation
     public void setPrice(double price) {
-        if (price < 0.01) throw new IllegalArgumentException("Invalid price");
+        if (price < 0.01) {
+            throw new IllegalArgumentException("Invalid price");
+        }
         this.price = price;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void setStock(int stock) {
-        if (stock < 0) throw new IllegalArgumentException("Invalid stock");
+        if (stock < 0) {
+            throw new IllegalArgumentException("Invalid stock");
+        }
         this.stock = stock;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void decrementStock(int quantity) {
+        if (quantity > this.stock) {
+            throw new IllegalArgumentException("Insufficient stock");
+        }
+        this.stock -= quantity;
+        this.updatedAt = LocalDateTime.now();
     }
 
     @Override
-    public int compareTo(Product o) {
-        return productName.compareToIgnoreCase(o.productName);
+    public int compareTo(Product other) {
+        return this.name.compareToIgnoreCase(other.name);
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Product)) return false;
-        return productName.equalsIgnoreCase(((Product) o).productName);
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Product)) return false;
+        Product other = (Product) obj;
+        return this.id.equals(other.id);
     }
 
     @Override
     public int hashCode() {
-        return productName.toLowerCase().hashCode();
+        return id.hashCode();
     }
 
     @Override
     public String toString() {
-        return String.format("%s | %s | $%.2f | %d in stock", 
-            productName, category, price, stock);
+        return String.format("%s | %s | $%.2f | %d in stock",
+            name, category, price, stock);
     }
 }
