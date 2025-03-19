@@ -1,185 +1,176 @@
-import java.time.*;
-import java.time.format.*;
-import java.util.*;
-import java.util.concurrent.atomic.*;
-import java.io.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Order implements Comparable<Order> {
+    private static int nextId = 1000;
+
     public enum ShippingSpeed {
-        STANDARD(1, 5.99), RUSH(2, 15.99), OVERNIGHT(3, 29.99);
+        STANDARD(5.99, 5),
+        RUSH(15.99, 2),
+        OVERNIGHT(29.99, 1);
 
-        final int priority;
-        final double cost;
+        private final double cost;
+        private final int estimatedDays;
 
-        ShippingSpeed(int priority, double cost) {
-            this.priority = priority;
+        ShippingSpeed(double cost, int estimatedDays) {
             this.cost = cost;
+            this.estimatedDays = estimatedDays;
         }
+
+        public double getCost() { return cost; }
+        public int getEstimatedDays() { return estimatedDays; }
     }
 
-    private static final AtomicInteger ID_GENERATOR = new AtomicInteger(1000);
-    private static final DateTimeFormatter DATE_FORMATTER = 
-        DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    public static class OrderItem {
+        private final String productId;
+        private final String productName;
+        private final int quantity;
+        private final double unitPrice;
+        private final double subtotal;
 
-    private final int orderId;
+        public OrderItem(String productId, String productName, int quantity, double unitPrice) {
+            this.productId = productId;
+            this.productName = productName;
+            this.quantity = quantity;
+            this.unitPrice = unitPrice;
+            this.subtotal = quantity * unitPrice;
+        }
+
+        // Getters
+        public String getProductId() { return productId; }
+        public String getProductName() { return productName; }
+        public int getQuantity() { return quantity; }
+        public double getUnitPrice() { return unitPrice; }
+        public double getSubtotal() { return subtotal; }
+    }
+
+    private final String id;
     private final String customerId;
-    private final LocalDateTime orderTime;
     private final List<OrderItem> items;
-    private final ShippingSpeed speed;
+    private final LocalDateTime orderDate;
+    private final ShippingSpeed shippingSpeed;
     private final String shippingAddress;
+    private final double subtotal;
+    private final double shippingCost;
     private final double total;
-    private final int priority;
     private boolean shipped;
+    private LocalDateTime shippedDate;
+    private final int priority;
 
-    public Order(String customerId, ShippingSpeed speed, String address) {
-        this.orderId = ID_GENERATOR.getAndIncrement();
-        this.customerId = validateCustomerId(customerId);
-        this.orderTime = LocalDateTime.now();
-        this.speed = speed;
-        this.shippingAddress = validateAddress(address);
-        this.items = new ArrayList<>();
+    public Order(
+        String customerId,
+        List<OrderItem> items,
+        ShippingSpeed shippingSpeed,
+        String shippingAddress
+    ) {
+        validateInputs(customerId, items, shippingAddress);
+
+        synchronized(Order.class) {
+            this.id = String.format("O%d", nextId++);
+        }
+        this.customerId = customerId;
+        this.items = new ArrayList<>(items);
+        this.orderDate = LocalDateTime.now();
+        this.shippingSpeed = shippingSpeed;
+        this.shippingAddress = sanitizeAddress(shippingAddress);
+        this.subtotal = calculateSubtotal();
+        this.shippingCost = shippingSpeed.getCost();
+        this.total = subtotal + shippingCost;
+        this.shipped = false;
+        this.shippedDate = null;
         this.priority = calculatePriority();
-        this.total = 0.0;
     }
 
-    private String validateCustomerId(String id) {
-        if (id == null || id.trim().isEmpty()) {
-            throw new IllegalArgumentException("Invalid customer ID");
+    private void validateInputs(
+        String customerId,
+        List<OrderItem> items,
+        String address
+    ) {
+        if (customerId == null || customerId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Customer ID cannot be empty");
         }
-        return id.trim();
-    }
-
-    private String validateAddress(String address) {
+        if (items == null || items.isEmpty()) {
+            throw new IllegalArgumentException("Order must contain at least one item");
+        }
         if (address == null || address.trim().isEmpty()) {
-            throw new IllegalArgumentException("Invalid shipping address");
+            throw new IllegalArgumentException("Shipping address cannot be empty");
         }
-        return address.replace("\n", " ").trim();
+    }
+
+    private String sanitizeAddress(String address) {
+        return address.replaceAll("[\\n\\r]", " ").trim();
+    }
+
+    private double calculateSubtotal() {
+        return items.stream()
+            .mapToDouble(OrderItem::getSubtotal)
+            .sum();
     }
 
     private int calculatePriority() {
-        return (speed.priority * 1_000_000_000) - 
-               (int) orderTime.toEpochSecond(ZoneOffset.UTC);
-    }
-
-    public boolean addItem(Product product, int quantity) {
-        if (product == null || quantity < 1) return false;
-        if (product.getStock() < quantity) return false;
-
-        synchronized (this) {
-            product.setStock(product.getStock() - quantity);
-            items.add(new OrderItem(product, quantity));
-            total = items.stream()
-                .mapToDouble(OrderItem::getPrice)
-                .sum() + speed.cost;
-            return true;
+        int speedPriority;
+        switch (shippingSpeed) {
+            case OVERNIGHT: speedPriority = 3; break;
+            case RUSH: speedPriority = 2; break;
+            default: speedPriority = 1;
         }
+        
+        // Higher priority = earlier shipping needed
+        return (speedPriority * 1_000_000) - 
+               (int) (orderDate.toLocalDate().toEpochDay());
     }
 
-    public String toCSV() {
-        return String.format("%d,%s,%s,%s,%b,%s,%.2f%s",
-            orderId,
-            escape(customerId),
-            orderTime.format(DATE_FORMATTER),
-            speed.name(),
-            shipped,
-            escape(shippingAddress),
-            total,
-            items.stream()
-                .map(i -> "," + escape(i.productName) + "," + i.quantity)
-                .collect(Collectors.joining())
-        );
-    }
-
-    public static Order fromCSV(String csv, Map<String, Product> products) {
-        String[] parts = unescape(csv).split(",", -1);
-        if (parts.length < 7) throw new IllegalArgumentException("Invalid CSV format");
-
-        Order order = new Order(
-            parts[1],
-            ShippingSpeed.valueOf(parts[3]),
-            parts[5]
-        );
-
-        order.orderId = Integer.parseInt(parts[0]);
-        order.orderTime = LocalDateTime.parse(parts[2], DATE_FORMATTER);
-        order.shipped = Boolean.parseBoolean(parts[4]);
-        order.total = Double.parseDouble(parts[6]);
-
-        for (int i = 7; i < parts.length; i += 2) {
-            if (i+1 >= parts.length) break;
-            
-            Product p = products.get(parts[i]);
-            if (p != null) {
-                order.items.add(new OrderItem(p, Integer.parseInt(parts[i+1])));
-            }
-        }
-
-        updateIdGenerator(order.orderId);
-        return order;
-    }
-
-    private static void updateIdGenerator(int loadedId) {
-        ID_GENERATOR.updateAndGet(current -> 
-            Math.max(current, loadedId + 1));
-    }
-
-    private static String escape(String input) {
-        return input.replace(",", "<comma>")
-                    .replace("\n", "<newline>")
-                    .replace("\\", "<backslash>");
-    }
-
-    private static String unescape(String input) {
-        return input.replace("<comma>", ",")
-                    .replace("<newline>", "\n")
-                    .replace("<backslash>", "\\");
-    }
-
-    // OrderItem inner class
-    private static class OrderItem {
-        final String productName;
-        final int quantity;
-        final double unitPrice;
-
-        OrderItem(Product product, int quantity) {
-            this.productName = product.getProductName();
-            this.quantity = quantity;
-            this.unitPrice = product.getPrice();
-        }
-
-        double getPrice() {
-            return unitPrice * quantity;
-        }
-    }
-
-    // Getters and comparison methods
-    public int getOrderId() { return orderId; }
+    // Getters
+    public String getId() { return id; }
     public String getCustomerId() { return customerId; }
-    public LocalDateTime getOrderTime() { return orderTime; }
     public List<OrderItem> getItems() { return Collections.unmodifiableList(items); }
-    public ShippingSpeed getSpeed() { return speed; }
-    public boolean isShipped() { return shipped; }
-    public String getAddress() { return shippingAddress; }
+    public LocalDateTime getOrderDate() { return orderDate; }
+    public ShippingSpeed getShippingSpeed() { return shippingSpeed; }
+    public String getShippingAddress() { return shippingAddress; }
+    public double getSubtotal() { return subtotal; }
+    public double getShippingCost() { return shippingCost; }
     public double getTotal() { return total; }
+    public boolean isShipped() { return shipped; }
+    public LocalDateTime getShippedDate() { return shippedDate; }
+    public int getPriority() { return priority; }
 
-    @Override
-    public int compareTo(Order o) {
-        return Integer.compare(o.priority, priority);
+    public void ship() {
+        if (shipped) {
+            throw new IllegalStateException("Order has already been shipped");
+        }
+        shipped = true;
+        shippedDate = LocalDateTime.now();
+    }
+
+    public LocalDateTime getEstimatedDeliveryDate() {
+        LocalDateTime baseDate = shippedDate != null ? shippedDate : LocalDateTime.now();
+        return baseDate.plusDays(shippingSpeed.getEstimatedDays());
     }
 
     @Override
-    public boolean equals(Object o) {
-        return o instanceof Order && this.orderId == ((Order) o).orderId;
+    public int compareTo(Order other) {
+        // Higher priority orders should come first
+        return Integer.compare(other.priority, this.priority);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Order)) return false;
+        Order other = (Order) obj;
+        return this.id.equals(other.id);
     }
 
     @Override
     public int hashCode() {
-        return orderId;
+        return id.hashCode();
     }
 
     @Override
     public String toString() {
-        return String.format("Order #%d - %s - %s - Total: $%.2f",
-            orderId, customerId, orderTime.format(DateTimeFormatter.ISO_LOCAL_DATE), total);
+        return String.format("Order #%s | Customer: %s | Total: $%.2f | Status: %s",
+            id, customerId, total, shipped ? "Shipped" : "Pending");
     }
 }
