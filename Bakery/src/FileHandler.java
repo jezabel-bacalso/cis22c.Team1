@@ -9,7 +9,14 @@ import java.io.*;
 import java.util.*;
 
 public class FileHandler {
-
+    
+    /**
+     * Reads product data from a file and converts it into a list of Product objects.
+     *
+     * @param filename The name of the file to read product data from.
+     * @return A list of Product objects created from the file data.
+     * @throws IOException If an I/O error occurs while reading the file.
+     */
     public List<Product> readProductsFromFile(String filename) throws IOException {
         List<Product> products = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
@@ -23,7 +30,13 @@ public class FileHandler {
         return products;
     }
 
-    // Write product data to file
+    /**
+     * Writes a list of Product objects to a file in CSV format.
+     *
+     * @param filename The name of the file to write product data to.
+     * @param products The list of Product objects to write to the file.
+     * @throws IOException If an I/O error occurs while writing to the file.
+     */
     public void writeProductsToFile(String filename, List<Product> products) throws IOException {
     	try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename))) {
             for (Product product : products) {
@@ -33,7 +46,13 @@ public class FileHandler {
         }
     }
 
-    // Read order data from file
+    /**
+     * Reads order data from a file and converts it into a list of Order objects.
+     *
+     * @param filename The name of the file to read order data from.
+     * @return A list of Order objects created from the file data.
+     * @throws IOException If an I/O error occurs while reading the file.
+     */
     public List<Order> readOrdersFromFile(String filename) throws IOException {
         List<Order> orders = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
@@ -47,7 +66,13 @@ public class FileHandler {
         return orders;
     }
 
-    // Write order data to file
+    /**
+     * Writes a list of Order objects to a file in CSV format.
+     *
+     * @param filename The name of the file to write order data to.
+     * @param orders The list of Order objects to write to the file.
+     * @throws IOException If an I/O error occurs while writing to the file.
+     */
     public void writeOrdersToFile(String filename, List<Order> orders) throws IOException {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename))) {
             for (Order order : orders) {
@@ -57,7 +82,15 @@ public class FileHandler {
         }
     }
 
-    // Read user data from file
+    /**
+     * Reads user data from a file and converts it into a list of User objects.
+     * The type of user (Customer or Employee) is determined by the userType parameter.
+     *
+     * @param filename The name of the file to read user data from.
+     * @param userType The type of user to create ("Customer" or "Employee").
+     * @return A list of User objects created from the file data.
+     * @throws IOException If an I/O error occurs while reading the file.
+     */
     public List<User> readUsersFromFile(String filename, String userType) throws IOException {
         List<User> users = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
@@ -76,7 +109,13 @@ public class FileHandler {
         return users;
     }
 
-    // Write user data to file
+    /**
+     * Writes a list of User objects to a file in CSV format.
+     *
+     * @param filename The name of the file to write user data to.
+     * @param users The list of User objects to write to the file.
+     * @throws IOException If an I/O error occurs while writing to the file.
+     */
     public void writeUsersToFile(String filename, List<User> users) throws IOException {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename))) {
             for (User user : users) {
