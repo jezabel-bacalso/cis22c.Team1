@@ -1,6 +1,6 @@
-import java.util.Scanner;
+// CustomerMenu.java
 import java.util.List;
-import java.util.PriorityQueue;
+import java.util.Scanner;
 
 public class CustomerMenu {
     private LinkedList orderList;

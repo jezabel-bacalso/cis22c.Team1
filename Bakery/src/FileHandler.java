@@ -1,8 +1,4 @@
-/**
- * FileHandler.java
- * @author Team 1
- * CIS 22C, Group Project
- */
+//FileHandler.java
 
 
 import java.io.*;
