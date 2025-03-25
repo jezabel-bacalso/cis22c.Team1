@@ -1,8 +1,9 @@
-//Order.java
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class Order implements Comparable<Order> {
     private static int nextId = 1000;
@@ -82,6 +83,60 @@ public class Order implements Comparable<Order> {
         this.shipped = false;
         this.shippedDate = null;
         this.priority = calculatePriority();
+    }
+    
+    //PULL REQUEST FOR FILEHANDLER - ITSNOTVII
+    public String toCSVString() {
+        String itemsStr = items.stream()
+            .map(item -> String.join(":",
+                item.getProductId(),
+                item.getProductName(),
+                String.valueOf(item.getQuantity()),
+                String.valueOf(item.getUnitPrice())
+            ))
+            .collect(Collectors.joining(";"));
+
+        return String.join(",",
+            id,
+            customerId,
+            itemsStr,
+            orderDate.toString(),
+            shippingSpeed.name(),
+            shippingAddress,
+            String.valueOf(total),
+            String.valueOf(shipped),
+            shippedDate != null ? shippedDate.toString() : "null"
+        );
+    }
+    
+    // PULL REQUEST FOR FILEHANDLER - ITSNOTVII
+    public Order(String[] csvData) {
+        this.id = csvData[0];
+        this.customerId = csvData[1];
+        this.items = parseItemsFromCSV(csvData[2]);
+        this.orderDate = LocalDateTime.parse(csvData[3]);
+        this.shippingSpeed = ShippingSpeed.valueOf(csvData[4]);
+        this.shippingAddress = csvData[5];
+        this.total = Double.parseDouble(csvData[6]);
+        this.shipped = Boolean.parseBoolean(csvData[7]);
+        this.shippedDate = "null".equals(csvData[8]) ? null : LocalDateTime.parse(csvData[8]);
+        this.priority = calculatePriority();
+    }
+
+    private List<OrderItem> parseItemsFromCSV(String itemsCSV) {
+        List<OrderItem> parsedItems = new ArrayList<>();
+        String[] itemEntries = itemsCSV.split(";");
+        
+        for (String entry : itemEntries) {
+            String[] parts = entry.split(":");
+            parsedItems.add(new OrderItem(
+                parts[0], // productId
+                parts[1], // productName
+                Integer.parseInt(parts[2]), // quantity
+                Double.parseDouble(parts[3]) // unitPrice
+            ));
+        }
+        return parsedItems;
     }
 
     private void validateInputs(
@@ -174,4 +229,7 @@ public class Order implements Comparable<Order> {
         return String.format("Order #%s | Customer: %s | Total: $%.2f | Status: %s",
             id, customerId, total, shipped ? "Shipped" : "Pending");
     }
+    
+    
+    
 }
