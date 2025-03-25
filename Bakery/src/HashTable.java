@@ -1,4 +1,3 @@
-//Hashtable.java
 import java.util.ArrayList;
 
 public class HashTable<T> {
@@ -37,10 +36,20 @@ public class HashTable<T> {
      * @throws IllegalArgumentException when size <= 0
      */
     public HashTable(T[] array, int size) throws IllegalArgumentException {
-       this(size);
-      if (array != null) {
-            for (T element : array) {
-                add(element);
+       if(array == null) {
+            numElements = 0;
+            table = new ArrayList<LinkedList<T>>();
+            for(int i = 0; i <= size; i++) {
+                table.add(new LinkedList<T>());
+            }
+       } else {
+            numElements = 0;
+            table = new ArrayList<LinkedList<T>>();
+            for(int i = 0; i <= size; i++) {
+                table.add(new LinkedList<T>());
+            }
+            for(int i = 0; i < array.length; i++) {
+                add(array[i]);
             }
         }
     }
@@ -54,7 +63,6 @@ public class HashTable<T> {
      * @return the index in the table
      */
     private int hash(T obj) {
-        int code = obj.hashCode();
         return obj.hashCode() % table.size();
     }
 
