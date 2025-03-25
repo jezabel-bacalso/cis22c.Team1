@@ -55,8 +55,10 @@ public class FileHandler {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] data = line.split(",");
-                // Parse data and create Order object
-                // Add to orders list
+                if (data.length != 9) {
+                    throw new IOException("Invalid order CSV format. Expected 9 fields, got " + data.length);
+                }
+                orders.add(new Order(data)); // Uses the new CSV constructor
             }
         }
         return orders;
@@ -120,4 +122,54 @@ public class FileHandler {
             }
         }
     }
+    
+    public List<Customer> readCustomersFromFile(String filename) throws IOException {
+        List<Customer> customers = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] data = line.split(",");
+                customers.add(new Customer(
+                    data[0], // username
+                    data[1], // password
+                    data[2] // email
+                    // ... other customer fields
+                ));
+            }
+        }
+        return customers;
+    }
+    
+    /**
+     * Reads employee data from a CSV file
+     * Expected CSV format: username,password,fullName,position,isManager
+     * Example: jdoe,pass123,John Doe,Warehouse Supervisor,true
+     */
+    public List<Employee> readEmployeesFromFile(String filename) throws IOException {
+        List<Employee> employees = new ArrayList<>();
+        try (BufferedReader br = new BufferedRead4er(new FileReader(filename))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                try {
+                    String[] data = line.split(",");
+                    if (data.length != 5) {
+                        throw new IOException("Invalid employee record: " + line);
+                    }
+                    
+                    employees.add(new Employee(
+                        data[0].trim(),  // username
+                        data[1].trim(),  // password
+                        data[2].trim(),  // fullName
+                        data[3].trim(),  // position
+                        Boolean.parseBoolean(data[4].trim())  // isManager
+                    ));
+                } catch (Exception e) {
+                    System.err.println("Skipping invalid employee record: " + line);
+                    e.printStackTrace();
+                }
+            }
+        }
+        return employees;
+    }
+
 }
