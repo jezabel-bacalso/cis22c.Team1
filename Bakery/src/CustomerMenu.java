@@ -1,14 +1,29 @@
 import java.util.List;
 import java.util.Scanner;
 
+// The CustomerMenu class provides a console-based interface for customers
+// to interact with the system (e.g., search products, place orders, view orders, etc.).
 public class CustomerMenu {
 
+    // Current customer logged in.
     private Customer currentCustomer;
+    // Catalog containing available products.
     private ProductCatalog catalog;
+    // Priority queue for orders (for processing orders in some priority order).
     private PriorityQueue orderQueue;
+    // List to hold all orders.
     private List<Order> allOrders;
+    // Scanner for reading user input from the console.
     private Scanner sc;
 
+    /**
+     * Constructor for the CustomerMenu.
+     *
+     * @param currentCustomer the customer using the menu
+     * @param catalog the product catalog
+     * @param orderQueue the queue of orders to be processed
+     * @param allOrders the list of all orders
+     */
     public CustomerMenu(Customer currentCustomer,
                         ProductCatalog catalog,
                         PriorityQueue orderQueue,
@@ -18,11 +33,16 @@ public class CustomerMenu {
         this.catalog = catalog;
         this.orderQueue = orderQueue;
         this.allOrders = allOrders;
+        // Initialize the scanner to read from standard input.
         this.sc = new Scanner(System.in);
     }
 
+    /**
+     * Displays the main customer menu and processes user selections.
+     */
     public void showMenu() {
         boolean keepGoing = true;
+        // Continue to display the menu until the user chooses to quit.
         while (keepGoing) {
             System.out.println("\n=== Customer Menu ===");
             System.out.println("1) Search for a product (by partial name/category)");
@@ -35,10 +55,11 @@ public class CustomerMenu {
             System.out.println("8) View Shipped Orders");
             System.out.println("9) View Unshipped Orders");
             System.out.println("10) Quit (return to main menu)");
-            // Added prompt at the end
+            // Prompt for the user's choice.
             System.out.print("Choice: ");
 
             String choice = sc.nextLine().trim();
+            // Process the menu selection using a switch-case.
             switch (choice) {
                 case "1":
                     searchProduct();
@@ -77,11 +98,17 @@ public class CustomerMenu {
         }
     }
 
+    /**
+     * Searches the product catalog for products matching a partial name or category.
+     * It displays all matching products.
+     */
     private void searchProduct() {
         System.out.print("Enter partial product name or category: ");
         String kw = sc.nextLine().toLowerCase();
+        // Retrieve all products sorted by name.
         List<Product> allByName = catalog.getAllByName();
         boolean foundAny = false;
+        // Check each product for a match with the provided keyword.
         for (Product p : allByName) {
             if (p.getName().toLowerCase().contains(kw)
                 || p.getCategory().toLowerCase().contains(kw))
@@ -95,6 +122,9 @@ public class CustomerMenu {
         }
     }
 
+    /**
+     * Finds and displays a product by its primary key (exact name match).
+     */
     private void findByPrimaryKey() {
         System.out.print("Enter product name (exact): ");
         String name = sc.nextLine().trim();
@@ -106,10 +136,14 @@ public class CustomerMenu {
         }
     }
 
+    /**
+     * Finds and displays a product by its secondary key (exact price match).
+     */
     private void findBySecondaryKey() {
         System.out.print("Enter product price: ");
         double val;
         try {
+            // Parse the input into a double.
             val = Double.parseDouble(sc.nextLine());
         } catch (NumberFormatException ex) {
             System.out.println("Invalid numeric input.");
@@ -123,6 +157,9 @@ public class CustomerMenu {
         }
     }
 
+    /**
+     * Lists all products in the catalog sorted by name.
+     */
     private void listByName() {
         List<Product> list = catalog.getAllByName();
         if (list.isEmpty()) {
@@ -135,6 +172,9 @@ public class CustomerMenu {
         }
     }
 
+    /**
+     * Lists all products in the catalog sorted by price.
+     */
     private void listByPrice() {
         List<Product> list = catalog.getAllByPrice();
         if (list.isEmpty()) {
@@ -147,6 +187,11 @@ public class CustomerMenu {
         }
     }
 
+    /**
+     * Allows the customer to place an order for a product.
+     * It checks product availability, prompts for quantity and shipping speed,
+     * creates a new order, updates product stock, and adds the order to various records.
+     */
     private void placeOrder() {
         System.out.print("Enter product name to order: ");
         String name = sc.nextLine().trim();
@@ -172,6 +217,7 @@ public class CustomerMenu {
             return;
         }
 
+        // Prompt the customer to select a shipping speed.
         System.out.println("Select shipping speed:");
         System.out.println("  1) OVERNIGHT");
         System.out.println("  2) RUSH");
@@ -179,39 +225,52 @@ public class CustomerMenu {
         String sChoice = sc.nextLine().trim();
         Order.ShippingSpeed speed;
         switch (sChoice) {
-            case "1": speed = Order.ShippingSpeed.OVERNIGHT; break;
-            case "2": speed = Order.ShippingSpeed.RUSH; break;
-            default:  speed = Order.ShippingSpeed.STANDARD; break;
+            case "1": 
+                speed = Order.ShippingSpeed.OVERNIGHT; 
+                break;
+            case "2": 
+                speed = Order.ShippingSpeed.RUSH; 
+                break;
+            default:  
+                speed = Order.ShippingSpeed.STANDARD; 
+                break;
         }
 
-        // Construct new order
+        // Construct a new order with the customer's email and chosen shipping speed.
         Order newOrder = new Order(currentCustomer.getEmail(), speed);
-        // Add item
+        // Create a new order item with product details and quantity.
         Order.OrderItem item = new Order.OrderItem(
             found.getId(), found.getName(), qty, found.getPrice()
         );
+        // Add the item to the new order.
         newOrder.addItem(item);
 
-        // decrement product stock
+        // Decrement the product stock by the ordered quantity.
         found.setStock(found.getStock() - qty);
 
-        // add to queue + allOrders
+        // Add the order to the order queue and the global orders list.
         orderQueue.insert(newOrder);
         allOrders.add(newOrder);
+        // Record the order as an unshipped order for the customer.
         currentCustomer.addUnshippedOrder(newOrder);
 
         System.out.println("Order placed: " + newOrder);
     }
 
+    /**
+     * Displays all purchases for the current customer, separating shipped and unshipped orders.
+     */
     private void viewPurchases() {
         System.out.println("== All Purchases for " + currentCustomer.getEmail() + " ==");
         LinkedList<Order> unshipped = currentCustomer.getUnshippedOrders();
         LinkedList<Order> shipped = currentCustomer.getShippedOrders();
 
         System.out.println("Unshipped Orders:");
+        // If there are no unshipped orders, display an appropriate message.
         if (unshipped.isEmpty()) {
             System.out.println("  none");
         } else {
+            // Iterate through the unshipped orders using the list's iterator.
             unshipped.positionIterator();
             while (!unshipped.offEnd()) {
                 System.out.println("  " + unshipped.getIterator());
@@ -220,9 +279,11 @@ public class CustomerMenu {
         }
 
         System.out.println("Shipped Orders:");
+        // If there are no shipped orders, display an appropriate message.
         if (shipped.isEmpty()) {
             System.out.println("  none");
         } else {
+            // Iterate through the shipped orders using the list's iterator.
             shipped.positionIterator();
             while (!shipped.offEnd()) {
                 System.out.println("  " + shipped.getIterator());
@@ -231,6 +292,9 @@ public class CustomerMenu {
         }
     }
 
+    /**
+     * Displays only the shipped orders for the current customer.
+     */
     private void viewShipped() {
         LinkedList<Order> shipped = currentCustomer.getShippedOrders();
         if (shipped.isEmpty()) {
@@ -245,6 +309,9 @@ public class CustomerMenu {
         }
     }
 
+    /**
+     * Displays only the unshipped orders for the current customer.
+     */
     private void viewUnshipped() {
         LinkedList<Order> unshipped = currentCustomer.getUnshippedOrders();
         if (unshipped.isEmpty()) {
