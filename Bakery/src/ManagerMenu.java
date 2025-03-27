@@ -1,119 +1,151 @@
-//ManagerMenu.java
-import java.util.Scanner;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
-public class ManagerMenu {
-    private BST<Product> productTree;
-    private Scanner scanner;
+public class ManagerMenu extends EmployeeMenu {
 
-    public ManagerMenu() {
-        productTree = new BST<>();
-        scanner = new Scanner(System.in);
+    private ProductCatalog catalog;
+    private Scanner managerScanner;
+
+    public ManagerMenu(PriorityQueue orderQueue,
+                       List<Order> allOrders,
+                       HashTable<Customer> customers,
+                       HashTable<Employee> employees,
+                       ProductCatalog catalog)
+    {
+        super(orderQueue, allOrders, customers, employees);
+        this.catalog = catalog;
+        this.managerScanner = new Scanner(System.in);
     }
 
-    public void start() {
-        while (true) {
-            System.out.println("\nManager Menu:");
-            System.out.println("1. Add Product");
-            System.out.println("2. Update Product");
-            System.out.println("3. Remove Product");
-            System.out.println("4. Search Product");
-            System.out.println("5. Display Products (Sorted)");
-            System.out.println("6. Exit");
-            System.out.print("Enter your choice: ");
-            
-            int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
-            
+    @Override
+    public void showMenu() {
+        boolean running = true;
+        while (running) {
+            System.out.println("\n=== Manager Menu ===");
+            System.out.println("1) Search for an Order by ID");
+            System.out.println("2) Search for an Order by Customer Name");
+            System.out.println("3) View Highest Priority Order");
+            System.out.println("4) View All Orders Sorted by Priority");
+            System.out.println("5) Ship an Order");
+            System.out.println("6) Add New Product");
+            System.out.println("7) Update an Existing Product");
+            System.out.println("8) Remove a Product");
+            System.out.println("9) Quit (back to main)");
+
+            String choice = managerScanner.nextLine().trim();
             switch (choice) {
-                case 1:
-                    addProduct();
+                case "1":
+                    doSearchById();
                     break;
-                case 2:
-                    updateProduct();
+                case "2":
+                    doSearchByCustomerName();
                     break;
-                case 3:
-                    removeProduct();
+                case "3":
+                    doViewHighestPriority();
                     break;
-                case 4:
-                    searchProduct();
+                case "4":
+                    doViewAllOrdersSorted();
                     break;
-                case 5:
-                    displaySortedProducts();
+                case "5":
+                    doShipOrder();
                     break;
-                case 6:
-                    System.out.println("Exiting Manager Menu.");
-                    return;
+                case "6":
+                    doAddNewProduct();
+                    break;
+                case "7":
+                    doUpdateProduct();
+                    break;
+                case "8":
+                    doRemoveProduct();
+                    break;
+                case "9":
+                    running = false;
+                    System.out.println("Returning to main menu...");
+                    break;
                 default:
-                    System.out.println("Invalid choice. Please try again.");
+                    System.out.println("Invalid option.");
             }
         }
     }
 
-    private void addProduct() {
+    private void doAddNewProduct() {
         System.out.print("Enter product name: ");
-        String name = scanner.nextLine();
+        String name = managerScanner.nextLine().trim();
+
         System.out.print("Enter category: ");
-        String category = scanner.nextLine();
+        String cat = managerScanner.nextLine().trim();
+
         System.out.print("Enter price: ");
-        double price = scanner.nextDouble();
-        System.out.print("Enter stock: ");
-        int stock = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+        double price = Double.parseDouble(managerScanner.nextLine().trim());
+
+        System.out.print("Enter stock quantity: ");
+        int stock = Integer.parseInt(managerScanner.nextLine().trim());
+
         System.out.print("Enter description: ");
-        String description = scanner.nextLine();
+        String desc = managerScanner.nextLine().trim();
 
-        Product newProduct = new Product(name, category, price, stock, description, new HashSet<>(), 0);
-        productTree.insert(newProduct);
-        System.out.println("Product added successfully.");
+        System.out.print("Enter calories: ");
+        int cals = Integer.parseInt(managerScanner.nextLine().trim());
+
+        System.out.print("Enter allergens (semicolon-separated): ");
+        String allergLine = managerScanner.nextLine();
+        java.util.Set<String> allergSet = new java.util.HashSet<>();
+        if (!allergLine.trim().isEmpty()) {
+            String[] tokens = allergLine.split(";");
+            for (String t : tokens) {
+                allergSet.add(t.trim().toLowerCase());
+            }
+        }
+
+        Product p = new Product(name, cat, price, stock, desc, allergSet, cals);
+        catalog.addProduct(p);
+        System.out.println("Product added: " + p);
     }
 
-    private void updateProduct() {
+    private void doUpdateProduct() {
         System.out.print("Enter product name to update: ");
-        String name = scanner.nextLine();
-        Product existingProduct = productTree.search(new Product(name, "", 0, 0, "", new HashSet<>(), 0));
+        String name = managerScanner.nextLine().trim();
 
-        if (existingProduct != null) {
-            System.out.print("Enter new price: ");
-            double price = scanner.nextDouble();
-            System.out.print("Enter new stock: ");
-            int stock = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
-            existingProduct.setPrice(price);
-            existingProduct.setStock(stock);
-            System.out.println("Product updated successfully.");
-        } else {
-            System.out.println("Product not found.");
+        Product existing = catalog.findByName(name);
+        if (existing == null) {
+            System.out.println("No product found with that name.");
+            return;
         }
+        System.out.println("Current product: " + existing);
+
+        System.out.print("New price (blank = no change): ");
+        String pStr = managerScanner.nextLine().trim();
+        double newPrice = existing.getPrice();
+        if (!pStr.isEmpty()) {
+            newPrice = Double.parseDouble(pStr);
+        }
+
+        System.out.print("New description (blank = no change): ");
+        String dStr = managerScanner.nextLine().trim();
+        String newDesc = dStr.isEmpty() ? existing.getDescription() : dStr;
+
+        System.out.print("Add to stock (blank = 0): ");
+        String sStr = managerScanner.nextLine().trim();
+        int newStock = existing.getStock();
+        if (!sStr.isEmpty()) {
+            int addQty = Integer.parseInt(sStr);
+            newStock += addQty;
+        }
+
+        catalog.updateProduct(existing, newPrice, newDesc, newStock);
+        System.out.println("Updated product: " + existing);
     }
 
-    private void removeProduct() {
+    private void doRemoveProduct() {
         System.out.print("Enter product name to remove: ");
-        String name = scanner.nextLine();
-        boolean removed = productTree.delete(new Product(name, "", 0, 0, "", new HashSet<>(), 0));
-        
-        if (removed) {
-            System.out.println("Product removed successfully.");
-        } else {
-            System.out.println("Product not found.");
-        }
-    }
+        String name = managerScanner.nextLine().trim();
 
-    private void searchProduct() {
-        System.out.print("Enter product name to search: ");
-        String name = scanner.nextLine();
-        Product product = productTree.search(new Product(name, "", 0, 0, "", new HashSet<>(), 0));
-        
-        if (product != null) {
-            System.out.println("Product found: " + product);
-        } else {
-            System.out.println("Product not found.");
+        Product existing = catalog.findByName(name);
+        if (existing == null) {
+            System.out.println("No product found with that name.");
+            return;
         }
-    }
-
-    private void displaySortedProducts() {
-        List<Product> sortedProducts = productTree.inOrderTraversal();
-        sortedProducts.forEach(System.out::println);
+        catalog.removeProduct(existing);
+        System.out.println("Removed product: " + existing);
     }
 }

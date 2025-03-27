@@ -1,133 +1,110 @@
-//PriorityQueue.java
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 public class PriorityQueue {
-    private int heapSize;
-    private ArrayList<Order> heap;
-    private Comparator<Order> cmp;
 
-/**
-     * Constructor initializes the priority queue with a comparator.
-     */
-    public PriorityQueue(Comparator<Order> cmp) {
-        this.heapSize = 0;
-        this.cmp = cmp;
+    private ArrayList<Order> heap; // 1-based indexing
+    private int size;
+
+    public PriorityQueue() {
         this.heap = new ArrayList<>();
-        heap.add(null); // Unused index 0 for simpler calculations
+        // dummy at index 0
+        heap.add(null);
+        this.size = 0;
     }
 
-/**
-     * Custom Comparator for sorting Orders by priority.
-     */
-    private static class OrderComparator implements Comparator<Order> {
-        @Override
-        public int compare(Order o1, Order o2) {
-            return Integer.compare(o1.getPriority(), o2.getPriority());
-        }
+    public boolean isEmpty() {
+        return (size == 0);
     }
-    /**
-     * Inserts an order into the priority queue.
-     */
+
     public void insert(Order order) {
-        heapSize++;
+        size++;
         heap.add(order);
-        heapIncreaseKey(heapSize); // Bubble up to maintain heap order
+        bubbleUp(size);
     }
 
-    /**
-     * Removes and returns the highest-priority order (Order to be shipped).
-     */
     public Order remove() {
-        if (heapSize == 0) {
-            throw new NoSuchElementException("No orders in queue.");
+        if (isEmpty()) {
+            throw new NoSuchElementException("PriorityQueue is empty");
         }
-
-        Order highestPriorityOrder = heap.get(1); // Get root order
-        heap.set(1, heap.get(heapSize)); // Move last order to root
-        heap.remove(heapSize); // Remove last order
-        heapSize--;
-        heapify(1); // Restore heap order
-
-        return highestPriorityOrder;
+        Order top = heap.get(1);
+        heap.set(1, heap.get(size));
+        heap.remove(size);
+        size--;
+        if (size > 0) {
+            heapify(1);
+        }
+        return top;
     }
 
-    /**
-     * Returns the highest-priority order without removing it.
-     */
-    public Order getHighestPriorityOrder() {
-        if (heapSize == 0) {
-            throw new NoSuchElementException("No orders in queue.");
+    public Order peek() {
+        if (isEmpty()) {
+            throw new NoSuchElementException("PriorityQueue is empty");
         }
         return heap.get(1);
     }
 
-    /**
-     * Searches for an order by ID.
-     */
-    public Order searchOrderById(int orderId) {
-        for (Order order : heap) {
-            if (order != null && order.getOrderId() == orderId) {
-                return order;
+    // Return a list of all orders in descending priority
+    public List<Order> getAllOrdersSorted() {
+        ArrayList<Order> copy = new ArrayList<>(heap.subList(1, size+1));
+        // Sort by compareTo => highest first
+        copy.sort((o1, o2) -> o1.compareTo(o2));
+        return copy;
+    }
+
+    // Search for an unshipped order by ID
+    public Order searchById(String orderId) {
+        for (int i = 1; i <= size; i++) {
+            if (heap.get(i).getId().equals(orderId)) {
+                return heap.get(i);
             }
         }
-        return null; // Not found
+        return null;
     }
 
-    /**
-     * Heapify - Ensures heap property is maintained.
-     */
-    private void heapify(int index) {
-        int left = getLeft(index);
-        int right = getRight(index);
-        int highestPriority = index;
-
-        if (left <= heapSize && cmp.compare(heap.get(left), heap.get(index)) > 0) {
-            highestPriority = left;
+    // Search for unshipped orders by customer email
+    public List<Order> searchByCustomerEmail(String email) {
+        List<Order> results = new ArrayList<>();
+        for (int i = 1; i <= size; i++) {
+            if (heap.get(i).getCustomerId().equalsIgnoreCase(email)) {
+                results.add(heap.get(i));
+            }
         }
-        if (right <= heapSize && cmp.compare(heap.get(right), heap.get(highestPriority)) > 0) {
-            highestPriority = right;
-        }
-        if (highestPriority != index) {
-            swap(index, highestPriority);
-            heapify(highestPriority);
-        }
+        return results;
     }
 
-    /**
-     * Bubbles up an order to maintain heap priority.
-     */
-    private void heapIncreaseKey(int index) {
-        while (index > 1 && cmp.compare(heap.get(getParent(index)), heap.get(index)) < 0) {
-            swap(index, getParent(index));
-            index = getParent(index);
+    private void bubbleUp(int idx) {
+        while (idx > 1) {
+            int parent = idx / 2;
+            if (heap.get(idx).compareTo(heap.get(parent)) > 0) {
+                swap(idx, parent);
+                idx = parent;
+            } else {
+                break;
+            }
         }
     }
 
-    /**
-     * Swaps two elements in the priority queue.
-     */
+    private void heapify(int idx) {
+        int left = 2*idx;
+        int right = 2*idx + 1;
+        int largest = idx;
+        if (left <= size && heap.get(left).compareTo(heap.get(largest)) > 0) {
+            largest = left;
+        }
+        if (right <= size && heap.get(right).compareTo(heap.get(largest)) > 0) {
+            largest = right;
+        }
+        if (largest != idx) {
+            swap(idx, largest);
+            heapify(largest);
+        }
+    }
+
     private void swap(int i, int j) {
         Order temp = heap.get(i);
         heap.set(i, heap.get(j));
         heap.set(j, temp);
-    }
-
-    /** Helper Methods **/
-
-    public int getLeft(int index) { return 2 * index; }
-    public int getRight(int index) { return 2 * index + 1; }
-    public int getParent(int index) { return index / 2; }
-    public boolean isEmpty() { return heapSize == 0; }
-
-    /**
-     * Returns all orders sorted by priority (Heap Sort).
-     */
-    public ArrayList<Order> getSortedOrders() {
-        ArrayList<Order> sortedOrders = new ArrayList<>(heap);
-        sortedOrders.remove(0); // Remove null placeholder
-        sortedOrders.sort(cmp);
-        return sortedOrders;
     }
 }

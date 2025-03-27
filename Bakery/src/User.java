@@ -1,39 +1,43 @@
-// Abstract User class
-abstract class User {
-    private String name;
+public abstract class User {
+    private String firstName;
+    private String lastName;
     private String email;
     private String password;
 
-    public User(String name, String email, String password) {
-        this.name = name;
-        this.email = email;
-        this.password = password;
+    public User(String firstName, String lastName, String email, String password) {
+        this.firstName = (firstName == null) ? "" : firstName.trim();
+        this.lastName  = (lastName == null)  ? "" : lastName.trim();
+        this.email     = (email == null)     ? "" : email.trim().toLowerCase();
+        this.password  = (password == null)  ? "" : password.trim();
     }
 
-    public String getName() {
-        return name;
+    public String getFirstName() { return firstName; }
+    public String getLastName()  { return lastName; }
+    public String getEmail()     { return email; }
+    public String getPassword()  { return password; }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName.trim();
     }
 
-    public String getEmail() {
-        return email;
+    public void setLastName(String lastName) {
+        this.lastName = lastName.trim();
     }
 
-    public String getPassword() {
-        return password;
+    public void setEmail(String email) {
+        this.email = email.trim().toLowerCase();
     }
 
+    public void setPassword(String password) {
+        this.password = password.trim();
+    }
+
+    // Each subclass (Customer/Employee) will define getRole() as "customer" or "employee"/"manager".
     public abstract String getRole();
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        User user = (User) obj;
-        return email.equals(user.email);
-    }
-
-    @Override
-    public int hashCode() {
-        return email.hashCode();
+    public String toString() {
+        return String.format("Name: %s %s | Email: %s | Password: %s",
+                firstName, lastName, email, password);
     }
 }

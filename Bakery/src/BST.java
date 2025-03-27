@@ -1,9 +1,17 @@
-//Bst.java
-import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Queue;
 
-public class BST<T> {
-    
+/**
+ * A fully featured generic Binary Search Tree for elements
+ * that implement Comparable<T>.
+ *
+ * @param <T> The type of data stored in the tree. Must be Comparable<T>.
+ */
+public class BST<T extends Comparable<T>> {
+    /** A single tree node storing data, plus left/right child references. */
     private class Node {
         private T data;
         private Node left;
@@ -11,507 +19,351 @@ public class BST<T> {
 
         public Node(T data) {
             this.data = data;
-            left = null;
-            right = null;
+            this.left = null;
+            this.right = null;
         }
     }
 
+    /** The root node of this BST. */
     private Node root;
 
-    /***CONSTRUCTORS***/
-
-    /**
-     * Default constructor for BST sets root to null.
+    /** 
+     * Constructs an empty BST.
      */
     public BST() {
-         root = null;
+        root = null;
     }
 
     /**
-     * Copy constructor for BST.
-     * @param bst the BST of which to make a copy.
-     * @param cmp the way the tree is organized.
+     * Copy constructor: performs a deep copy of another BST.
+     * 
+     * @param other the BST to copy
      */
-    public BST(BST<T> bst, Comparator<T> cmp) {
-       this.root = null;
-       if (bst != null) {
-           copyHelper(bst.root, cmp);
-       }
-
+    public BST(BST<T> other) {
+        root = null;
+        if (other != null && !other.isEmpty()) {
+            copyHelper(other.root);
+        }
     }
 
     /**
-     * Helper method for copy constructor.
-     * @param node the node containing data to copy.
-     * @param cmp the way the tree is organized.
+     * Recursive helper for the copy constructor. Inserts each node’s data
+     * from the other tree into this tree.
      */
-    private void copyHelper(Node node, Comparator<T> cmp) {
+    private void copyHelper(Node node) {
         if (node == null) {
-         return;
-      }    
-      this.insert(node.data, cmp);
-      copyHelper(node.left, cmp); 
-      copyHelper(node.right, cmp); 
-
-    }
-
-    /**
-     * Creates a BST of minimal height from an array of values.
-     * @param array the list of values to insert.
-     * @param cmp the way the tree is organized.
-     * @precondition array must be sorted in ascending order.
-     * @throws IllegalArgumentException when the array is unsorted.
-     */
-    public BST(T[] array, Comparator<T> cmp) throws IllegalArgumentException {
-         if (array == null || array.length == 0) {
-         root = null;
-         return;
-    }
-      if (!isSorted(array, cmp)) {
-         throw new IllegalArgumentException("Array must be sorted in ascending order.");
-    }
-      root = arrayHelper(0, array.length - 1, array);
-    }
-
-    /**
-     * Private helper method for array constructor
-     * to check for a sorted array.
-     * @param array the array to check.
-     * @param cmp the way the tree is organized.
-     * @return whether the array is sorted.
-     */
-    private boolean isSorted(T[] array, Comparator<T> cmp) {
-        for (int i = 1; i < array.length; i++) {
-         if (cmp.compare(array[i - 1], array[i]) > 0) {
-            return false;
+            return;
         }
-    }
-      return true;
-    }
-
-    /**
-     * Recursive helper for the array constructor.
-     * @param begin beginning array index.
-     * @param end ending array index.
-     * @param array array to search.
-     * @return the newly created Node.
-     */
-    private Node arrayHelper(int begin, int end, T[] array) {
-         if (begin > end) {
-         return null;
-    }
-      int mid = (begin + end) / 2;
-      Node node = new Node(array[mid]);
-      node.left = arrayHelper(begin, mid - 1, array);
-      node.right = arrayHelper(mid + 1, end, array);
-      return node;
+        insert(node.data);
+        copyHelper(node.left);
+        copyHelper(node.right);
     }
 
-    /***ACCESSORS***/
-
-    /**
-     * Returns the data stored in the root.
-     * @precondition !isEmpty()
-     * @return the data stored in the root.
-     * @throws NoSuchElementException when precondition is violated.
-     */
-    public T getRoot() throws NoSuchElementException {
-        if (isEmpty()) {
-            throw new NoSuchElementException("getRoot(): tree is empty.");
-        }
-        return root.data;
-    }
-
-    /**
-     * Determines whether the tree is empty.
-     * @return whether the tree is empty.
+    /** 
+     * Checks if the tree is empty.
+     *
+     * @return true if there are no nodes in the tree, false otherwise
      */
     public boolean isEmpty() {
-         return root == null;
+        return (root == null);
     }
 
-    /**
-     * Returns the current size of the tree (number of nodes).
-     * @return the size of the tree.
+    /** 
+     * Returns the number of nodes in this BST.
      */
     public int getSize() {
         return getSize(root);
     }
 
-    /**
-     * Helper method for the getSize method.
-     * @param node the current node to count.
-     * @return the size of the tree.
-     */
+    /** Private recursive helper for getSize. */
     private int getSize(Node node) {
-        if (node == null) {
-         return 0;  
-    }
-      return 1 + getSize(node.left) + getSize(node.right);
+        if (node == null) return 0;
+        return 1 + getSize(node.left) + getSize(node.right);
     }
 
     /**
-     * Returns the height of tree by counting edges.
-     * @return the height of the tree.
+     * Returns the height of the BST in terms of edges, or -1 if the tree is empty.
+     * Height of a single-node tree is 0 (no edges).
      */
     public int getHeight() {
         return getHeight(root);
     }
 
-    /**
-     * Helper method for getHeight method.
-     * @param node the current node whose height to count.
-     * @return the height of the tree.
-     */
+    /** Private recursive helper for getHeight. */
     private int getHeight(Node node) {
         if (node == null) {
-         return -1;  
-    }
-      int leftHeight = getHeight(node.left);
-      int rightHeight = getHeight(node.right);
-      return 1 + Math.max(leftHeight, rightHeight); 
-    }
-
-    /**
-     * Returns the smallest value in the tree.
-     * @precondition !isEmpty()
-     * @return the smallest value in the tree.
-     * @throws NoSuchElementException when the precondition is violated.
-     */
-    public T findMin() throws NoSuchElementException {
-       if (isEmpty()) {
-           throw new NoSuchElementException("findMin(): The tree is empty.");
-       }
-       return findMin(root);
+            return -1; 
+        }
+        int leftH = getHeight(node.left);
+        int rightH = getHeight(node.right);
+        return Math.max(leftH, rightH) + 1;
     }
 
     /**
-     * Recursive helper method to findMin method.
-     * @param node the current node to check if it is the smallest.
-     * @return the smallest value in the tree.
+     * Returns the minimum value stored in the BST.
+     *
+     * @throws NoSuchElementException if the tree is empty
      */
-    private T findMin(Node node) {
-       if (node.left == null) {
-           return node.data;
-       }
-       return findMin(node.left);
-   }
+    public T findMin() {
+        if (isEmpty()) {
+            throw new NoSuchElementException("findMin(): Tree is empty!");
+        }
+        return findMin(root).data;
+    }
 
-
-    /**
-     * Returns the largest value in the tree
-     * @precondition !isEmpty()
-     * @return the largest value in the tree.
-     * @throws NoSuchElementException when the precondition is violated.
-     */
-    public T findMax() throws NoSuchElementException {
-       if (isEmpty()) {
-           throw new NoSuchElementException("findMax(): The tree is empty.");
-       }
-       return findMax(root);
+    /** Private helper that returns the node with the minimum data, not just the value. */
+    private Node findMin(Node node) {
+        if (node.left == null) {
+            return node;
+        }
+        return findMin(node.left);
     }
 
     /**
-     * Recursive helper method to findMax method.
-     * @param node the current node to check if it is the largest.
-     * @return the largest value in the tree.
+     * Returns the maximum value stored in the BST.
+     *
+     * @throws NoSuchElementException if the tree is empty
      */
-    private T findMax(Node node) {
-       if (node.right == null) {
-           return node.data;
-       }
-       return findMax(node.right);
+    public T findMax() {
+        if (isEmpty()) {
+            throw new NoSuchElementException("findMax(): Tree is empty!");
+        }
+        return findMax(root).data;
+    }
+
+    /** Private helper that returns the node with the maximum data. */
+    private Node findMax(Node node) {
+        if (node.right == null) {
+            return node;
+        }
+        return findMax(node.right);
     }
 
     /**
-     * Searches for a specified value in the tree.
-     * @param data the value to search for.
-     * @param cmp the Comparator that indicates the way
-     * the data in the tree was ordered.
-     * @return the data stored in that Node of the tree, otherwise null.
+     * Searches for a given value in the BST.
+     * @param data the value to locate
+     * @return the matching value if found, or null if not found
      */
-    public T search(T data, Comparator<T> cmp) {
-        return search(data, root, cmp);
+    public T search(T data) {
+        return search(data, root);
     }
 
-    /**
-     * Helper method for the search method.
-     * @param data the data to search for.
-     * @param node the current node to check.
-     * @param cmp the Comparator that determines how the BST is organized.
-     * @return the data stored in that Node of the tree, otherwise null.
-     */
-    private T search(T data, Node node, Comparator<T> cmp) {
+    /** Private recursive helper for search. */
+    private T search(T data, Node node) {
         if (node == null) {
-         return null; 
-    }
-      int comparison = cmp.compare(data, node.data);
-      if (comparison == 0) {
-         return node.data;  // Data found
-    } else if (comparison < 0) {
-         return search(data, node.left, cmp);  
-    } else {
-         return search(data, node.right, cmp); 
-    }
-    }
-
-    /***MUTATORS***/
-
-    /**
-     * Inserts a new node in the tree.
-     * @param data the data to insert.
-     * @param cmp the Comparator indicating how data in the tree is ordered.
-     */
-    public void insert(T data, Comparator<T> cmp) {
-         if (root == null) {
-         root = new Node(data);
-    } else {
-         insert(data, root, cmp);
-    }
-    }
-
-    /**
-     * Helper method to insert.
-     * Inserts a new value in the tree.
-     * @param data the data to insert.
-     * @param node the current node in the search for the correct insert
-     *     location.
-     * @param cmp the Comparator indicating how data in the tree is ordered.
-     */
-    private void insert(T data, Node node, Comparator<T> cmp) {
-         int compareResult = cmp.compare(data, node.data);
-      if (compareResult < 0) {
-         if (node.left == null) {
-            node.left = new Node(data);
-        } else {
-            insert(data, node.left, cmp);
+            return null;
         }
-    } else {
-          if (node.right == null) {
-             node.right = new Node(data);
+        int cmp = data.compareTo(node.data);
+        if (cmp == 0) {
+            return node.data; // found
+        } else if (cmp < 0) {
+            return search(data, node.left);
         } else {
-            insert(data, node.right, cmp);
+            return search(data, node.right);
         }
     }
+
+    /**
+     * Inserts a new value into the BST. 
+     * Duplicates go to the right subtree by convention.
+     */
+    public void insert(T data) {
+        root = insert(data, root);
+    }
+
+    /** Private recursive helper for insert. */
+    private Node insert(T data, Node node) {
+        if (node == null) {
+            return new Node(data);
+        }
+        int cmp = data.compareTo(node.data);
+        if (cmp < 0) {
+            node.left = insert(data, node.left);
+        } else {
+            // cmp >= 0 goes to the right
+            node.right = insert(data, node.right);
+        }
+        return node;
     }
 
     /**
-     * Removes a value from the BST
-     * @param data the value to remove
-     * @param cmp the Comparator indicating how data in the tree is organized.
-     * Note: updates nothing when the element is not in the tree.
+     * Removes a value from the BST, if present. 
+     * Otherwise, does nothing.
      */
-    public void remove(T data, Comparator<T> cmp) {
-       root = remove(data, root, cmp);
+    public void remove(T data) {
+        root = remove(data, root);
+    }
+
+    /** Private recursive helper for remove. */
+    private Node remove(T data, Node node) {
+        if (node == null) {
+            // not found, do nothing
+            return null;
+        }
+        int cmp = data.compareTo(node.data);
+        if (cmp < 0) {
+            node.left = remove(data, node.left);
+        } else if (cmp > 0) {
+            node.right = remove(data, node.right);
+        } else {
+            // found the node to remove
+            if (node.left == null && node.right == null) {
+                // no children
+                node = null;
+            } else if (node.left != null && node.right == null) {
+                // only left child
+                node = node.left;
+            } else if (node.left == null && node.right != null) {
+                // only right child
+                node = node.right;
+            } else {
+                // two children: replace with minimum in the right subtree
+                Node minRight = findMin(node.right);
+                node.data = minRight.data; 
+                node.right = remove(minRight.data, node.right);
+            }
+        }
+        return node;
+    }
+
+    /* ======================================================
+       TRAVERSALS
+       ====================================================== */
+
+    /**
+     * Returns all elements of the tree in **in-order** (ascending) form.
+     * @return a List of the data in ascending order
+     */
+    public List<T> inOrderTraversal() {
+        List<T> list = new ArrayList<>();
+        inOrderHelper(root, list);
+        return list;
+    }
+    private void inOrderHelper(Node node, List<T> list) {
+        if (node == null) return;
+        inOrderHelper(node.left, list);
+        list.add(node.data);
+        inOrderHelper(node.right, list);
     }
 
     /**
-     * Helper method to the remove method.
-     * @param data the data to remove.
-     * @param node the current node.
-     * @param cmp the Comparator indicating how data in the tree is organized.
-     * @return an updated reference variable.
-     */
-    private Node remove(T data, Node node, Comparator<T> cmp) {
-       if (node == null) {
-           // data not found
-           return null;
-       }
-        int compareResult = cmp.compare(data, node.data);
-       if (compareResult < 0) {
-           node.left = remove(data, node.left, cmp);
-       } else if (compareResult > 0) {
-           node.right = remove(data, node.right, cmp);
-       } else {
-           // found the node to remove
-           if (node.left == null && node.right == null) {
-               // no children
-               node = null;
-           } else if (node.left != null && node.right == null) {
-               // only left child
-               node = node.left;
-           } else if (node.left == null && node.right != null) {
-               // only right child
-               node = node.right;
-           } else {
-               // two children
-               T min = findMin(node.right);
-               node.data = min;
-               node.right = remove(min, node.right, cmp);
-           }
-       }
-       return node;
-   }
-
-    /***ADDITONAL OPERATIONS***/
-
-    /**
-     * Returns a String containing the data in pre order
-     * followed by a new line.
-     * @return a String of data in pre order.
-     */
-    public String preOrderString() {
-        StringBuilder preOrder = new StringBuilder();
-       preOrderString(root, preOrder); 
-       preOrder.toString();
-       return preOrder.toString()  + "\n";
-    }
-
-
-    /**
-     * Helper method to preOrderString method.
-     * Prints the data in pre order to the console followed by a new line.
-     * @param node the current Node
-     * @param preOrder a StringBuilder containing the data
-     */
-    private void preOrderString(Node node, StringBuilder preOrder) {
-        if (node == null){
-          return;
-       }
-       preOrder.append(node.data).append(" "); 
-       preOrderString(node.left, preOrder);    
-       preOrderString(node.right, preOrder);
-
-    }
-
-    /**
-     * Returns a String containing the data in order followed by a new line.
-     * @return a String of data in order
+     * Returns a string with the data in in-order form, separated by spaces.
      */
     public String inOrderString() {
-        StringBuilder inOrder = new StringBuilder();
-        inOrderString(root, inOrder);
-        return inOrder.toString();
-
-    }
-
-    /**
-     * Helper method to inOrderString.
-     * Inserts the data in order into a String in order.
-     * @param node the current Node
-     * @param inOrder a String containing the data
-     */
-    private void inOrderString(Node node, StringBuilder inOrder) {
-        if (node == null) {
-           return; 
-        }
-        inOrderString(node.left, inOrder);
-        inOrder.append(node.data).append("\n");
-        inOrderString(node.right, inOrder);
-
-    }
-
-    /**
-     * Returns a String containing the data in post order.
-     * @return a String of data in post order
-     */
-    public String postOrderString() {
-        StringBuilder postOrder = new StringBuilder();
-        postOrderString(root, postOrder);
-        return postOrder.toString() + "\n";
-
-    }
-
-    /**
-     * Helper method to postOrderString
-     * Inserts the data in post order into a String
-     * @param node the current Node
-     * @param postOrder a String containing the data
-     */
-    private void postOrderString(Node node, StringBuilder postOrder) {
-        if (node == null) {
-           return;
-        }
-        postOrderString(node.left, postOrder);
-        postOrderString(node.right, postOrder);
-        postOrder.append(node.data).append(" ");
-
-    }
-
-    /**
-     * Creates a String that is a height order
-     * traversal of the data in the tree starting at
-     * the Node with the largest height (the root)
-     * down to Nodes of smallest height - with
-     * Nodes of equal height added from left to right.
-     * @return the level order traversal as a String
-     */
-    public String levelOrderString() {
-        Queue<Node> que  = new Queue<>();
         StringBuilder sb = new StringBuilder();
-        que.enqueue(root);
-        levelOrderString(que, sb);
-        return sb.toString() + "\n";
+        inOrderString(root, sb);
+        return sb.toString().trim();
+    }
+    private void inOrderString(Node node, StringBuilder sb) {
+        if (node == null) return;
+        inOrderString(node.left, sb);
+        sb.append(node.data).append(" ");
+        inOrderString(node.right, sb);
     }
 
     /**
-     * Helper method to levelOrderString.
-     * Inserts the data in level order into a String.
-     * @param que the Queue in which to store the data.
-     * @param heightTraverse a StringBuilder containing the data.
+     * Returns all elements in **pre-order** (root-left-right).
      */
-    private void levelOrderString(Queue<Node> que, StringBuilder heightTraverse) {
-        if(!que.isEmpty()) {
-            Node nd = que.getFront();
-            que.dequeue();
-            if(nd != null) {
-                que.enqueue(nd.left);
-                que.enqueue(nd.right);
-                heightTraverse.append(nd.data + " ");
-            }
-            levelOrderString(que, heightTraverse);
-        }
+    public List<T> preOrderTraversal() {
+        List<T> list = new ArrayList<>();
+        preOrderHelper(root, list);
+        return list;
     }
+    private void preOrderHelper(Node node, List<T> list) {
+        if (node == null) return;
+        list.add(node.data);
+        preOrderHelper(node.left, list);
+        preOrderHelper(node.right, list);
+    }
+
     /**
-    * Finds the lowest common ancestor
-    * @param data1 the first value
-    * @param data2 the second value
-    * @param cmp the Comparator
-    * @return the data in the shared precursor
-    * @throws IllegalArgumentException if the tree is empty
-    */
-   public T sharedPrecursor(T data1, T data2, Comparator<T> cmp) throws IllegalArgumentException {
-       if (data1 == null || data2 == null || cmp == null) {
-           throw new IllegalArgumentException("sharedPrecursor(): Null input not allowed.");
-       }
-   
-       if (isEmpty()) {
-           throw new IllegalArgumentException("sharedPrecursor(): The tree is empty.");
-       }
-   
-       if (search(data1, cmp) == null || search(data2, cmp) == null) {
-           throw new IllegalArgumentException("sharedPrecursor(): At least one of the values is not in the BST.");
-       }
-       Node ancestor = sharedPrecursor(root, data1, data2, cmp);
-       return (ancestor == null) ? null : ancestor.data;
-   }
-   /**
-    * Recursive method for sharedPrecursor.
-    * Finds node with lowest common ancestor of data1 and data2.
-    * @param node the current node
-    * @param data1 the first value
-    * @param data2 the second value
-    * @param cmp the Comparator 
-    * @return the node that is the LCA (or null if none)
-    */
-   private Node sharedPrecursor(Node node, T data1, T data2, Comparator<T> cmp) {
-      if (node == null) {
-         return null;
+     * Returns all elements in **post-order** (left-right-root).
+     */
+    public List<T> postOrderTraversal() {
+        List<T> list = new ArrayList<>();
+        postOrderHelper(root, list);
+        return list;
+    }
+    private void postOrderHelper(Node node, List<T> list) {
+        if (node == null) return;
+        postOrderHelper(node.left, list);
+        postOrderHelper(node.right, list);
+        list.add(node.data);
     }
 
-      int comp1 = cmp.compare(data1, node.data);
-      int comp2 = cmp.compare(data2, node.data);
+    /**
+     * Returns all elements in **level-order** (BFS).
+     */
+    public List<T> levelOrderTraversal() {
+        List<T> result = new ArrayList<>();
+        if (root == null) return result;
 
-    // values smaller
-      if (comp1 < 0 && comp2 < 0) {
-         return sharedPrecursor(node.left, data1, data2, cmp);
+        Queue<Node> q = new LinkedList<>();
+        q.offer(root);
+
+        while (!q.isEmpty()) {
+            Node current = q.poll();
+            result.add(current.data);
+
+            if (current.left != null) {
+                q.offer(current.left);
+            }
+            if (current.right != null) {
+                q.offer(current.right);
+            }
+        }
+        return result;
     }
 
-    // values larger
-      if (comp1 > 0 && comp2 > 0) {
-         return sharedPrecursor(node.right, data1, data2, cmp);
+    /* ======================================================
+       OPTIONAL EXAMPLE: LOWEST COMMON ANCESTOR 
+       (sometimes called sharedPrecursor in course assignments)
+       ====================================================== */
+
+    /**
+     * Finds the lowest common ancestor (LCA) of two values, if both exist in the tree.
+     * Returns null if either value is not found or the tree is empty.
+     */
+    public T sharedPrecursor(T data1, T data2) {
+        // Check if both exist:
+        if (search(data1) == null || search(data2) == null) {
+            return null; // if either is missing, no LCA
+        }
+        Node ancestor = sharedPrecursor(root, data1, data2);
+        return (ancestor == null) ? null : ancestor.data;
     }
 
-      return node;
-}
+    /** Private helper for LCA. */
+    private Node sharedPrecursor(Node node, T data1, T data2) {
+        if (node == null) {
+            return null;
+        }
+        int cmp1 = data1.compareTo(node.data);
+        int cmp2 = data2.compareTo(node.data);
+
+        // If both smaller, go left
+        if (cmp1 < 0 && cmp2 < 0) {
+            return sharedPrecursor(node.left, data1, data2);
+        }
+        // If both larger, go right
+        if (cmp1 > 0 && cmp2 > 0) {
+            return sharedPrecursor(node.right, data1, data2);
+        }
+        // Otherwise, they diverge here, so node is LCA
+        return node;
+    }
+    
+    /* ======================================================
+       toString, EQUALS, and so on 
+       (optional or based on preference)
+       ====================================================== */
+
+    /**
+     * Returns a string representation of the BST in level-order form.
+     */
+    @Override
+    public String toString() {
+        List<T> level = levelOrderTraversal();
+        return level.toString();
+    }
 }

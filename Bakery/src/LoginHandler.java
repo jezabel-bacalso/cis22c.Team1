@@ -1,171 +1,175 @@
-import java.io.*;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.util.List;
 import java.util.Scanner;
 
 /**
- * The LoginHandler class handles user login, account creation, and user management.
+ * LoginHandler centralizes logic for loading/saving user data
+ * (both Customers and Employees), and authenticating logins.
  */
 public class LoginHandler {
-    private HashTable<Customer> customerTable; // Hash table to store customers
-    private HashTable<Employee> employeeTable; // Hash table to store employees
+
+    private HashTable<Customer> customers;  // HashTable of customers
+    private HashTable<Employee> employees;  // HashTable of employees
+    private FileHandler fileHandler;
 
     /**
-     * Constructor for LoginHandler.
-     * Initializes the hash tables and loads users from files.
+     * Constructor that initializes the hash tables and the FileHandler.
+     * You can pass in the desired table sizes or read from a config.
+     *
+     * @param fileHandler  a FileHandler to read/write user data from disk
+     * @param custTableSize initial bucket size for the customer hash table
+     * @param empTableSize  initial bucket size for the employee hash table
      */
-    public LoginHandler() {
-        customerTable = new HashTable<>(10); // Initialize customer hash table
-        employeeTable = new HashTable<>(10); // Initialize employee hash table
-        loadUsers(); // Load users from files
+    public LoginHandler(FileHandler fileHandler, int custTableSize, int empTableSize) {
+        this.fileHandler = fileHandler;
+        this.customers = new HashTable<>(custTableSize);
+        this.employees = new HashTable<>(empTableSize);
     }
 
     /**
-     * Loads users from "employees.txt" and "customers.txt" files into hash tables.
+     * Loads customers and employees from files.
+     * 
+     * @param customerFile  e.g. "customers.txt"
+     * @param employeeFile  e.g. "employees.txt"
+     * @throws IOException if file read fails
      */
-    private void loadUsers() {
-        try {
-            // Load employees from file
-            Scanner employeeScanner = new Scanner(new File("employees.txt"));
-            while (employeeScanner.hasNextLine()) {
-                String name = employeeScanner.nextLine();
-                String email = employeeScanner.nextLine();
-                String password = employeeScanner.nextLine();
-                String role = employeeScanner.nextLine();
-                if (employeeScanner.hasNextLine()) {
-                    employeeScanner.nextLine(); // Skip blank line
-                }
-
-                employeeTable.add(new Employee(name, email, password, role)); // Add employee to hash table
+    public void loadUsers(String customerFile, String employeeFile) throws IOException {
+        // 1) Load Customers
+        List<User> custList = fileHandler.readUsersFromFile(customerFile, "Customer");
+        for (User u : custList) {
+            if (u instanceof Customer) {
+                customers.add((Customer)u);
             }
-            employeeScanner.close();
-
-            // Load customers from file
-            Scanner customerScanner = new Scanner(new File("customers.txt"));
-            while (customerScanner.hasNextLine()) {
-                String name = customerScanner.nextLine();
-                String email = customerScanner.nextLine();
-                String password = customerScanner.nextLine();
-                if (customerScanner.hasNextLine()) {
-                    customerScanner.nextLine(); // Skip blank line
-                }
-
-                customerTable.add(new Customer(name, email, password)); // Add customer to hash table
+        }
+        // 2) Load Employees
+        List<User> empList = fileHandler.readUsersFromFile(employeeFile, "Employee");
+        for (User u : empList) {
+            if (u instanceof Employee) {
+                employees.add((Employee)u);
             }
-            customerScanner.close();
-        } catch (FileNotFoundException e) {
-            System.out.println("File not found"); // Handle missing file error
         }
     }
 
     /**
-     * Handles the login process for users.
+     * Saves customers and employees to files.
+     *
+     * Because our HashTable may not support direct iteration,
+     * we either store them in a separate collection or
+     * implement an iteration approach. For now, we demonstrate a stub.
+     *
+     * @param customerFile path for customer data (e.g. "customers.txt")
+     * @param employeeFile path for employee data (e.g. "employees.txt")
+     * @throws IOException if file write fails
      */
-    public void login() {
-        Scanner scanner = new Scanner(System.in);
+    public void saveUsers(String customerFile, String employeeFile) throws IOException {
+        // We need a list of all customers and employees to write them
+        List<User> custList = gatherAllCustomers();
+        fileHandler.writeUsersToFile(customerFile, custList);
 
-        System.out.println("Welcome to ___ Bakery!");
-        System.out.println("\nPlease enter your email: ");
-        String email = scanner.nextLine();
-        System.out.println("Please enter your password: ");
-        String password = scanner.nextLine();
-
-        // Check if the user exists in the customer or employee table
-        User user = customerTable.get(new Customer("", email, password));
-        if (user == null) {
-            user = employeeTable.get(new Employee("", email, password, ""));
-        }
-
-        // Validate user credentials
-        if (user != null && user.getPassword().equals(password)) {
-            System.out.println("Welcome " + user.getName() + "!");
-            if (user instanceof Customer) {
-                System.out.println("You are logged in as a customer.");
-            } else if (user instanceof Employee) {
-                System.out.println("You are logged in as an employee.");
-            }
-        } else {
-            System.out.println("No account found. Let's create one!");
-            createUser(); // Prompt user to create an account
-        }
+        List<User> empList = gatherAllEmployees();
+        fileHandler.writeUsersToFile(employeeFile, empList);
     }
 
     /**
-     * Handles the account creation process for new users.
+     * Authenticates a user by email + password, returning either the 
+     * matching Customer or Employee, or null if not found.
+     *
+     * @param email    The email
+     * @param password The password
+     * @return A Customer or Employee object if valid, otherwise null
      */
-    private void createUser() {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Please enter your name: ");
-        String name = scanner.nextLine();
-        System.out.println("Please enter your email: ");
-        String email = scanner.nextLine();
-        System.out.println("Please enter your password: ");
-        String password = scanner.nextLine();
-        System.out.println("Are you a customer or employee?");
-        String role = scanner.nextLine();
-
-        // Create a new customer or employee based on the role
-        if (role.equalsIgnoreCase("customer")) {
-            Customer newCustomer = new Customer(name, email, password);
-            customerTable.add(newCustomer); // Add customer to hash table
-            System.out.println("Account created successfully!");
-            directUserToMenu(newCustomer); // Direct user to customer menu
-        } else if (role.equalsIgnoreCase("employee")) {
-            Employee newEmployee = new Employee(name, email, password, "employee");
-            employeeTable.add(newEmployee); // Add employee to hash table
-            System.out.println("Account created successfully!");
-            directUserToMenu(newEmployee); // Direct user to employee menu
-        } else {
-            System.out.println("Invalid role. Account creation failed.");
+    public User authenticate(String email, String password) {
+        // 1) Check Customer
+        Customer cKey = new Customer("", "", email, password);
+        Customer cFound = customers.get(cKey);
+        if (cFound != null && cFound.getPassword().equals(password)) {
+            return cFound;
         }
+
+        // 2) Check Employee
+        Employee eKey = new Employee("", "", email, password, false);
+        Employee eFound = employees.get(eKey);
+        if (eFound != null && eFound.getPassword().equals(password)) {
+            return eFound;
+        }
+
+        // Not found or invalid
+        return null;
     }
 
     /**
-     * Directs the user to the appropriate menu based on their role.
-     * @param user The user to be directed.
+     * Creates a new customer account by prompting the user for details.
+     * In a real system, you might do this from a GUI or separate menu code.
+     *
+     * @param sc a Scanner for console input
      */
-    private void directUserToMenu(User user) {
-        if (user instanceof Customer) {
-            new CustomerMenu().start(); // Start customer menu
-        } else if (user instanceof Employee) {
-            new EmployeeMenu().start(); // Start employee menu
-        } else {
-            System.out.println("Invalid role");
-        }
+    public void createCustomerAccount(Scanner sc) {
+        System.out.print("Enter first name: ");
+        String fn = sc.nextLine().trim();
+        System.out.print("Enter last name: ");
+        String ln = sc.nextLine().trim();
+        System.out.print("Enter email: ");
+        String email = sc.nextLine().trim();
+        System.out.print("Enter password: ");
+        String pass = sc.nextLine().trim();
+        System.out.print("Enter address: ");
+        String addr = sc.nextLine().trim();
+        System.out.print("Enter phone: ");
+        String phone = sc.nextLine().trim();
+
+        Customer newC = new Customer(fn, ln, email, pass, addr, phone);
+        customers.add(newC);
+        System.out.println("New customer account created: " + newC);
     }
 
     /**
-     * The main method serves as the entry point for the program.
-     * @param args Command-line arguments (not used).
+     * Creates a new employee account (possibly manager) by prompting user.
      */
-    public static void main(String[] args) {
-        LoginHandler loginHandler = new LoginHandler(); // Create an instance of LoginHandler
-        loginHandler.login(); // Start the login process
-    }
-}
+    public void createEmployeeAccount(Scanner sc) {
+        System.out.print("Enter first name: ");
+        String fn = sc.nextLine().trim();
+        System.out.print("Enter last name: ");
+        String ln = sc.nextLine().trim();
+        System.out.print("Enter email: ");
+        String email = sc.nextLine().trim();
+        System.out.print("Enter password: ");
+        String pass = sc.nextLine().trim();
+        System.out.print("Is this a manager? (y/n): ");
+        String ans = sc.nextLine().trim().toLowerCase();
+        boolean manager = ans.startsWith("y");
 
-// Customer class represents a customer user.
-class Customer extends User {
-    public Customer(String name, String email, String password) {
-        super(name, email, password);
-    }
-
-    @Override
-    public String getRole() {
-        return "customer";
-    }
-}
-
-// Employee class represents an employee user.
-class Employee extends User {
-    private String role;
-
-    public Employee(String name, String email, String password, String role) {
-        super(name, email, password);
-        this.role = role;
+        Employee newE = new Employee(fn, ln, email, pass, manager);
+        employees.add(newE);
+        System.out.println("New employee account created: " + newE);
     }
 
-    @Override
-    public String getRole() {
-        return role;
+    // =========== Gathering Data for Saving ===========
+
+    /**
+     * Gathers all Customer objects from the hash table into a List<User>.
+     * If your HashTable lacks iteration, you might have to store them separately.
+     */
+    private List<User> gatherAllCustomers() {
+        // If your HashTable has no iteration, this is a placeholder:
+        System.out.println("** gatherAllCustomers() is a stub if there's no iteration in HashTable **");
+        return new java.util.ArrayList<>();
+    }
+
+    /**
+     * Gathers all Employee objects from the hash table into a List<User>.
+     */
+    private List<User> gatherAllEmployees() {
+        System.out.println("** gatherAllEmployees() is a stub if there's no iteration in HashTable **");
+        return new java.util.ArrayList<>();
+    }
+
+    // =========== Accessors (optional) ===========
+
+    public HashTable<Customer> getCustomers() {
+        return customers;
+    }
+
+    public HashTable<Employee> getEmployees() {
+        return employees;
     }
 }

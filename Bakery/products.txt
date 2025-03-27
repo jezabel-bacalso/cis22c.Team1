@@ -1,5 +1,3 @@
-product/type/price/description/allergens/calories
-
 Choco Bun
 Pastry
 2.55

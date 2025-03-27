@@ -1,57 +1,58 @@
-//Products.java
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Product implements Comparable<Product> {
+
     private static int nextId = 1000;
-    
+
     private final String id;
     private final String name;
     private final String category;
     private double price;
     private int stock;
-    private final String description;
+    private String description;
     private final Set<String> allergens;
     private final int calories;
     private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public Product(
-        String name,
-        String category,
-        double price,
-        int stock,
-        String description,
-        Set<String> allergens,
-        int calories
-    ) {
+    public Product(String name,
+                   String category,
+                   double price,
+                   int stock,
+                   String description,
+                   Set<String> allergens,
+                   int calories)
+    {
         validateInputs(name, category, price, stock, calories);
-        
-        synchronized(Product.class) {
-            this.id = String.format("P%d", nextId++);
+        synchronized (Product.class) {
+            this.id = "P" + (nextId++);
         }
-        this.name = sanitize(name.trim());
-        this.category = sanitize(category.trim());
+        this.name = sanitize(name);
+        this.category = sanitize(category);
         this.price = price;
         this.stock = stock;
-        this.description = sanitize(description.trim());
+        this.description = sanitize(description);
         this.allergens = new HashSet<>();
-        for (String allergen : allergens) {
-            this.allergens.add(allergen.toLowerCase().trim());
+        if (allergens != null) {
+            for (String a : allergens) {
+                this.allergens.add(a.toLowerCase().trim());
+            }
         }
         this.calories = calories;
         this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
     }
 
-    private void validateInputs(
-        String name,
-        String category,
-        double price,
-        int stock,
-        int calories
-    ) {
+    // If you need a minimal constructor for searching by name:
+    public Product(String name) {
+        this(name, "Unknown", 0.01, 0, "", null, 1);
+    }
+
+    private void validateInputs(String name, String category,
+                                double price, int stock, int calories)
+    {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Product name cannot be empty");
         }
@@ -70,10 +71,10 @@ public class Product implements Comparable<Product> {
     }
 
     private String sanitize(String input) {
-        return input.replaceAll("[,\\n\\r]", " ").trim();
+        if (input == null) return "";
+        return input.replaceAll("[,\n\r]", " ").trim();
     }
 
-    // Getters
     public String getId() { return id; }
     public String getName() { return name; }
     public String getCategory() { return category; }
@@ -85,7 +86,6 @@ public class Product implements Comparable<Product> {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 
-    // Setters with validation
     public void setPrice(double price) {
         if (price < 0.01) {
             throw new IllegalArgumentException("Invalid price");
@@ -102,6 +102,11 @@ public class Product implements Comparable<Product> {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void setDescription(String desc) {
+        this.description = sanitize(desc);
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void decrementStock(int quantity) {
         if (quantity > this.stock) {
             throw new IllegalArgumentException("Insufficient stock");
@@ -112,7 +117,12 @@ public class Product implements Comparable<Product> {
 
     @Override
     public int compareTo(Product other) {
+        // "primary key" => name
         return this.name.compareToIgnoreCase(other.name);
+    }
+
+    public int compareByPrice(Product other) {
+        return Double.compare(this.price, other.price);
     }
 
     @Override
@@ -131,6 +141,6 @@ public class Product implements Comparable<Product> {
     @Override
     public String toString() {
         return String.format("%s | %s | $%.2f | %d in stock",
-            name, category, price, stock);
+                name, category, price, stock);
     }
 }
