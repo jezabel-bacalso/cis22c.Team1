@@ -6,8 +6,8 @@ import java.util.ArrayList;
  */
 public class HashTable<T> {
 
-    private int numElements;                      // total number of elements stored
-    private ArrayList<LinkedList<T>> table;       // buckets as custom LinkedLists
+    private int numElements;                      
+    private ArrayList<LinkedList<T>> table;       
 
     /**
      * Constructs a HashTable with a specified number of buckets.
